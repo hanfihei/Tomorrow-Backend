@@ -25,5 +25,4 @@ public interface JobQueryService {
     BusinessResponseDTO BusinessVerificationView(Long userId);
 
     GetRecommendationListResponse getTomorrowRecommendations(Long userId, Long cursorJobId, int size);
-
 }
