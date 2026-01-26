@@ -38,4 +38,8 @@ public class PersonalRegistration extends BaseEntity {
     //연관관계
     @OneToOne(mappedBy = "personalRegistration")
     private Job job;
+
+    public void setJob(Job job) {
+        this.job = job;
+    }
 }

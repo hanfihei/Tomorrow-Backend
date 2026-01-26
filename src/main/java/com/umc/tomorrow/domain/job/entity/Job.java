@@ -1,5 +1,6 @@
 package com.umc.tomorrow.domain.job.entity;
 
+import com.umc.tomorrow.domain.job.dto.request.JobRequestDTO;
 import com.umc.tomorrow.domain.job.enums.*;
 import com.umc.tomorrow.domain.application.entity.Application;
 import com.umc.tomorrow.domain.jobbookmark.entity.JobBookmark;
@@ -140,5 +141,35 @@ public class Job extends BaseEntity {
 
     public void updateStatus(PostStatus newStatus) {
         this.status = newStatus;
+    }
+
+
+    public static Job create(User user, JobDraft draft){
+        Job job = new Job();
+        job.user = user;
+        job.title = draft.getTitle();
+        job.jobDescription = draft.getJobDescription();
+        job.jobCategory = draft.getJobCategory();
+        job.workPeriod = draft.getWorkPeriod();
+        job.isActive = draft.getIsActive();
+        job.workStart = draft.getWorkStart();
+        job.workEnd = draft.getWorkEnd();
+        job.isTimeNegotiable = draft.getIsTimeNegotiable();
+        job.isPeriodNegotiable = draft.getIsPeriodNegotiable();
+        job.jobImageUrl = draft.getJobImageUrl();
+        job.companyName = draft.getCompanyName();
+        job.recruitmentLimit = draft.getRecruitmentLimit();
+        job.registrantType = draft.getRegistrantType();
+        job.deadline = draft.getDeadline();
+        job.preferredQualifications = draft.getPreferredQualifications();
+        job.latitude = draft.getLatitude();
+        job.longitude = draft.getLongitude();
+        job.location = draft.getLocation();
+        job.alwaysHiring = draft.getAlwaysHiring();
+        return job;
+    }
+
+    public void setPersonalRegistration(PersonalRegistration personalRegistration) {
+        this.personalRegistration = personalRegistration;
     }
 }

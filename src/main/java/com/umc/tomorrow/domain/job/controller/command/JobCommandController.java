@@ -56,7 +56,6 @@ public class JobCommandController {
     /**
      * 일자리 정보 세션에 저장(POST)
      * @param user 인증된 사용자
-//     * @param session 세션 사용
      * @return 성공 응답
      */
     //스웨거에서 api요청 1번으로 이미지 테스트를 위해 불필요한 코드들이 많음. postman을 이용하거나 이미지 uri를 따로 받는 api만들면 코드 간소화 가능
@@ -109,19 +108,21 @@ public class JobCommandController {
      * 일자리, 개인 등록 사유 정보 db에 저장(POST)
      * @param user 인증된 사용자
      * @param requestDTO 일자리 데이터 요청 DTO
-     * @param session 세션 사용
+     * @param draftId  작성된 초안 id
      * @return 성공 응답
      */
     // 개인 등록 API
     @Operation(summary = "개인 등록 사유", description = "일자리 등록 페이지에서 개인를 선택한 사람은 개인 등록 사유 페이지로 이동한다")
-    @PostMapping("/personal_registrations")
+    @PostMapping("/{draftId}/personal_registrations")
     public ResponseEntity<BaseResponse<JobCreateResponseDTO>> savePersonalRegistration(
             @AuthenticationPrincipal CustomOAuth2User user,
+            @PathVariable Long draftId,
             @Valid @RequestBody PersonalRequestDTO requestDTO
+
     ) {
         Long userId = user.getUserResponseDTO().getId();
 
-        JobCreateResponseDTO result = jobCommandService.savePersonalRegistration(userId, requestDTO);
+        JobCreateResponseDTO result = jobCommandService.savePersonalRegistration(userId, requestDTO, draftId);
         return ResponseEntity.ok(BaseResponse.onSuccess(result));
     }
 

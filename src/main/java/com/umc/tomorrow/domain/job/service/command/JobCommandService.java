@@ -16,7 +16,7 @@ public interface JobCommandService {
     JobDraftCreateResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO);
 
     // 개인 등록 시 Personal 정보 저장 + Job 생성
-    JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO, JobDraftCreateResponseDTO jobDraftCreateResponseDTO);
+    JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO, Long draftId);
 
     // 사업자 등록이 이미 되어있는 경우 바로 Job 생성
     JobCreateResponseDTO createJobWithExistingBusiness(Long userId, HttpSession session);

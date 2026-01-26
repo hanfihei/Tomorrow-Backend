@@ -76,6 +76,8 @@ public class JobCommandServiceImpl implements JobCommandService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
+
+
         // jobDraft 생성
         JobDraft savedDraft = jobDraftRepository.save(
                 JobDraft.create(user, requestDTO, jobAddress)
@@ -150,12 +152,15 @@ public class JobCommandServiceImpl implements JobCommandService {
 
     // 개인 등록 처리
     @Override
-    public JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO, JobDraftCreateResponseDTO jobDraftCreateResponseDTO) {
+    public JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO, Long draftId) {
         User user = getUser(userId);
-//        JobRequestDTO jobDTO = getJobFromSession(session);
 
-        // 개인 등록자인지 확인
-        if (jobDraftCreateResponseDTO.getRegistrantType() != RegistrantType.PERSONAL) {
+        //로그인된 유저가 초안을 작성한 유저인지 검증하고 draftId가 존재하는 id인지 검증함
+        JobDraft draft = jobDraftRepository.findByIdAndUser_Id(draftId, userId)
+                .orElseThrow(() -> new RestApiException(JobErrorStatus.JOBDRAFT_NOT_FOUND));
+
+        // 개인 등록자인지 검증
+        if (draft.getRegistrantType() != RegistrantType.PERSONAL) {
             throw new RestApiException(JobErrorStatus.INVALID_REGISTRANT_TYPE);
         }
 
@@ -165,19 +170,14 @@ public class JobCommandServiceImpl implements JobCommandService {
 
         PersonalRegistration personalRegistration = jobConverter.toPersonal(requestDTO);
 
-        Job job = jobConverter.toJob(jobDTO).toBuilder()
-                .user(user)
-                .personalRegistration(personalRegistration)
-                .build();
+        //초안을 job에 저장
+        Job job =  Job.create(user, draft);
 
-        // 연관관계 설정
-        personalRegistration = personalRegistration.toBuilder()
-                .job(job)
-                .build();
+        //연관관계 설정
+        personalRegistration.setJob(job);
+        job.setPersonalRegistration(personalRegistration);
 
         Job savedJob = jobRepository.save(job);
-        session.removeAttribute(JOB_SESSION_KEY);
-
 
         return JobCreateResponseDTO.builder()
                 .jobId(savedJob.getId())

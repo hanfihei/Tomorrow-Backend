@@ -5,6 +5,7 @@ import com.umc.tomorrow.domain.job.enums.*;
 import com.umc.tomorrow.domain.member.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -23,7 +24,7 @@ public class JobDraft {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User userId;
+    private User user;
 
     private String title;
 
@@ -86,7 +87,7 @@ public class JobDraft {
 
     public static JobDraft create(User user, JobRequestDTO dto, String jobAddress){
         JobDraft draft = new JobDraft();
-        draft.userId = user;
+        draft.user = user;
         draft.title = dto.getTitle();
         draft.jobDescription = dto.getJobDescription();
         draft.jobCategory = dto.getJobCategory();
@@ -110,6 +111,7 @@ public class JobDraft {
         draft.expiresAt = LocalDateTime.now().plusMinutes(30);
         return draft;
     }
+
 
 
 
