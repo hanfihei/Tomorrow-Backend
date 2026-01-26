@@ -1,5 +1,6 @@
 package com.umc.tomorrow.domain.job.entity;
 
+import com.umc.tomorrow.domain.job.dto.request.JobRequestDTO;
 import com.umc.tomorrow.domain.job.enums.*;
 import com.umc.tomorrow.domain.member.entity.User;
 import jakarta.persistence.*;
@@ -22,7 +23,7 @@ public class JobDraft {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User userId;
 
     private String title;
 
@@ -81,6 +82,34 @@ public class JobDraft {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private DraftStatus draftStatus = DraftStatus.DRAFT;
+
+
+    public static JobDraft create(User user, JobRequestDTO dto, String jobAddress){
+        JobDraft draft = new JobDraft();
+        draft.userId = user;
+        draft.title = dto.getTitle();
+        draft.jobDescription = dto.getJobDescription();
+        draft.jobCategory = dto.getJobCategory();
+        draft.workPeriod = dto.getWorkPeriod();
+        draft.isActive = dto.getIsActive();
+        draft.workStart = dto.getWorkStart();
+        draft.workEnd = dto.getWorkEnd();
+        draft.isTimeNegotiable = dto.getIsTimeNegotiable();
+        draft.isPeriodNegotiable = dto.getIsPeriodNegotiable();
+        draft.jobImageUrl = dto.getJobImageUrl();
+        draft.companyName = dto.getCompanyName();
+        draft.recruitmentLimit = dto.getRecruitmentLimit();
+        draft.registrantType = dto.getRegistrantType();
+        draft.deadline = dto.getDeadline();
+        draft.preferredQualifications = dto.getPreferredQualifications();
+        draft.latitude = dto.getLatitude();
+        draft.longitude = dto.getLongitude();
+        draft.location = dto.getLocation();
+        draft.alwaysHiring = dto.getAlwaysHiring();
+        draft.draftStatus = DraftStatus.DRAFT;
+        draft.expiresAt = LocalDateTime.now().plusMinutes(30);
+        return draft;
+    }
 
 
 

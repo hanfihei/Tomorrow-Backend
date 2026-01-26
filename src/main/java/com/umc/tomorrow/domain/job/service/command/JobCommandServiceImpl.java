@@ -5,17 +5,21 @@ import com.umc.tomorrow.domain.job.dto.request.BusinessRequestDTO;
 import com.umc.tomorrow.domain.job.dto.request.JobRequestDTO;
 import com.umc.tomorrow.domain.job.dto.request.PersonalRequestDTO;
 import com.umc.tomorrow.domain.job.dto.response.JobCreateResponseDTO;
+import com.umc.tomorrow.domain.job.dto.response.JobDraftCreateResponseDTO;
 import com.umc.tomorrow.domain.job.dto.response.JobStepResponseDTO;
 import com.umc.tomorrow.domain.job.entity.BusinessVerification;
 import com.umc.tomorrow.domain.job.entity.Job;
+import com.umc.tomorrow.domain.job.entity.JobDraft;
 import com.umc.tomorrow.domain.job.entity.PersonalRegistration;
 import com.umc.tomorrow.domain.job.enums.PostStatus;
 import com.umc.tomorrow.domain.job.enums.RegistrantType;
 import com.umc.tomorrow.domain.job.exception.code.JobErrorStatus;
+import com.umc.tomorrow.domain.job.repository.JobDraftRepository;
 import com.umc.tomorrow.domain.job.repository.JobRepository;
 import com.umc.tomorrow.domain.kakaoMap.service.KakaoMapService;
 import com.umc.tomorrow.domain.member.entity.User;
 import com.umc.tomorrow.domain.member.repository.UserRepository;
+import com.umc.tomorrow.domain.searchAndFilter.dto.response.JobResponseDTO;
 import com.umc.tomorrow.global.common.exception.RestApiException;
 import com.umc.tomorrow.global.common.exception.code.GlobalErrorStatus;
 import jakarta.servlet.http.HttpSession;
@@ -32,37 +36,126 @@ public class JobCommandServiceImpl implements JobCommandService {
     private final JobConverter jobConverter;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
+    private final JobDraftRepository jobDraftRepository;
     private final KakaoMapService kakaoMapService;
 
     // 일자리 폼 세션 저장
+//    @Override
+//    public JobStepResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO, HttpSession session) {
+//        // 위도/경도 → 주소 변환 후 DTO 세팅
+//        String jobAddress = kakaoMapService.getAddressFromCoord(requestDTO.getLatitude(), requestDTO.getLongitude());
+//        requestDTO.setLocation(jobAddress);
+//
+//        // 세션에 임시 저장
+//        session.setAttribute(JOB_SESSION_KEY, requestDTO);
+//
+//        // 유저 존재 확인
+//        userRepository.findById(userId)
+//                .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+//
+//        return JobStepResponseDTO.builder()
+//                .registrantType(requestDTO.getRegistrantType())
+//                .step("job_form_saved")
+//                .build();
+//    }
+
+
+
+
+
+
+
+    // 일자리 폼 드래프트 엔티티 저장
+    @Transactional
     @Override
-    public JobStepResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO, HttpSession session) {
+    public JobDraftCreateResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO) {
         // 위도/경도 → 주소 변환 후 DTO 세팅
         String jobAddress = kakaoMapService.getAddressFromCoord(requestDTO.getLatitude(), requestDTO.getLongitude());
-        requestDTO.setLocation(jobAddress);
-
-        // 세션에 임시 저장
-        session.setAttribute(JOB_SESSION_KEY, requestDTO);
 
         // 유저 존재 확인
-        userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
-        return JobStepResponseDTO.builder()
-                .registrantType(requestDTO.getRegistrantType())
-                .step("job_form_saved")
+        // jobDraft 생성
+        JobDraft savedDraft = jobDraftRepository.save(
+                JobDraft.create(user, requestDTO, jobAddress)
+        );
+
+        return JobDraftCreateResponseDTO.builder()
+                .id(savedDraft.getId())
+                .draftStatus(savedDraft.getDraftStatus())
+                .registrantType(savedDraft.getRegistrantType())
                 .build();
+
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // 개인 등록 처리
+//    @Override
+//    public JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO,
+//                                                         HttpSession session) {
+//        User user = getUser(userId);
+//        JobRequestDTO jobDTO = getJobFromSession(session);
+//
+//        // 개인 등록자인지 확인
+//        if (jobDTO.getRegistrantType() != RegistrantType.PERSONAL) {
+//            throw new RestApiException(JobErrorStatus.INVALID_REGISTRANT_TYPE);
+//        }
+//
+//        // 주소 변환 후 DTO 세팅
+//        String personalAddress = kakaoMapService.getAddressFromCoord(requestDTO.getLatitude(), requestDTO.getLongitude());
+//        requestDTO.setAddress(personalAddress);
+//
+//        PersonalRegistration personalRegistration = jobConverter.toPersonal(requestDTO);
+//
+//        Job job = jobConverter.toJob(jobDTO).toBuilder()
+//                .user(user)
+//                .personalRegistration(personalRegistration)
+//                .build();
+//
+//        // 연관관계 설정
+//        personalRegistration = personalRegistration.toBuilder()
+//                .job(job)
+//                .build();
+//
+//        Job savedJob = jobRepository.save(job);
+//        session.removeAttribute(JOB_SESSION_KEY);
+//
+//        return JobCreateResponseDTO.builder()
+//                .jobId(savedJob.getId())
+//                .build();
+//    }
+
+
+
 
     // 개인 등록 처리
     @Override
-    public JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO,
-                                                         HttpSession session) {
+    public JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO, JobDraftCreateResponseDTO jobDraftCreateResponseDTO) {
         User user = getUser(userId);
-        JobRequestDTO jobDTO = getJobFromSession(session);
+//        JobRequestDTO jobDTO = getJobFromSession(session);
 
         // 개인 등록자인지 확인
-        if (jobDTO.getRegistrantType() != RegistrantType.PERSONAL) {
+        if (jobDraftCreateResponseDTO.getRegistrantType() != RegistrantType.PERSONAL) {
             throw new RestApiException(JobErrorStatus.INVALID_REGISTRANT_TYPE);
         }
 
@@ -85,10 +178,19 @@ public class JobCommandServiceImpl implements JobCommandService {
         Job savedJob = jobRepository.save(job);
         session.removeAttribute(JOB_SESSION_KEY);
 
+
         return JobCreateResponseDTO.builder()
                 .jobId(savedJob.getId())
                 .build();
     }
+
+
+
+
+
+
+
+
 
     // 사업자 등록 여부 판단
     @Override

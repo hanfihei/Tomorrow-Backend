@@ -7,11 +7,8 @@ import com.umc.tomorrow.domain.auth.security.CustomOAuth2User;
 import com.umc.tomorrow.domain.job.dto.request.BusinessRequestDTO;
 import com.umc.tomorrow.domain.job.dto.request.JobRequestDTO;
 import com.umc.tomorrow.domain.job.dto.request.PersonalRequestDTO;
-import com.umc.tomorrow.domain.job.dto.response.BusinessResponseDTO;
-import com.umc.tomorrow.domain.job.dto.response.GetRecommendationListResponse;
+import com.umc.tomorrow.domain.job.dto.response.*;
 import com.umc.tomorrow.domain.job.dto.request.PostStatusRequestDTO;
-import com.umc.tomorrow.domain.job.dto.response.JobCreateResponseDTO;
-import com.umc.tomorrow.domain.job.dto.response.JobStepResponseDTO;
 import com.umc.tomorrow.domain.job.enums.RegistrantType;
 import com.umc.tomorrow.domain.job.service.command.JobCommandService;
 import com.umc.tomorrow.domain.job.service.query.JobQueryService;
@@ -59,16 +56,17 @@ public class JobCommandController {
     /**
      * 일자리 정보 세션에 저장(POST)
      * @param user 인증된 사용자
-     * @param session 세션 사용
+//     * @param session 세션 사용
      * @return 성공 응답
      */
+    //스웨거에서 api요청 1번으로 이미지 테스트를 위해 불필요한 코드들이 많음. postman을 이용하거나 이미지 uri를 따로 받는 api만들면 코드 간소화 가능
     @Operation(summary = "일자리 등록 폼 작성", description = "검증된 사용자가 일자리 폼을 작성합니다.")
     @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<BaseResponse<JobStepResponseDTO>> saveJobStepOne(
+    public ResponseEntity<BaseResponse<JobDraftCreateResponseDTO>> saveJobStepOne(
             @AuthenticationPrincipal CustomOAuth2User user,
             @RequestPart("jobRequest") String jobRequestJson,
-            @RequestPart(value = "image", required = false) MultipartFile image,
-            HttpSession session
+            @RequestPart(value = "image", required = false) MultipartFile image
+//            HttpSession session
     ) {
         Long userId = user.getUserResponseDTO().getId();
 
@@ -84,36 +82,28 @@ public class JobCommandController {
             throw new RestApiException(GlobalErrorStatus._BAD_REQUEST);
         }
 
-        // 유효성 검증f
+        // json파싱 문제로 별도로 유효성 검증을 실시해 줘야함
         Set<ConstraintViolation<JobRequestDTO>> violations = validator.validate(requestDTO);
         if (!violations.isEmpty()) {
             String errorMessage = violations.iterator().next().getMessage();
             throw new RestApiException(GlobalErrorStatus._VALIDATION_ERROR, errorMessage);
         }
 
-
         // 이미지 업로드
-        if (image != null) {
-            log.info("[이미지 업로드] 파일명: {}, 크기: {} bytes, isEmpty: {}",
-                    image.getOriginalFilename(),
-                    image.getSize(),
-                    image.isEmpty());
-        } else {
-            log.warn("[이미지 업로드] image 객체가 null입니다.");
-        }
-
         if (image != null && !image.isEmpty()) {
             String imageUrl = s3Uploader.upload(image, "job-images");
-            log.info("[이미지 업로드 성공] 업로드 경로: {}", imageUrl);
+            log.info("이미지 업로드 성공. 업로드 경로: {}", imageUrl);
             requestDTO.setJobImageUrl(imageUrl);
         } else {
-            log.info("[이미지 업로드] 업로드 로직이 실행되지 않았습니다.");
+            log.info("이미지 업로드 실패");
         }
 
         // 서비스 호출
-        JobStepResponseDTO result = jobCommandService.saveInitialJobStep(userId, requestDTO, session);
+        JobDraftCreateResponseDTO result = jobCommandService.saveInitialJobStep(userId, requestDTO);
         return ResponseEntity.ok(BaseResponse.onSuccess(result));
     }
+
+
 
     /**
      * 일자리, 개인 등록 사유 정보 db에 저장(POST)
@@ -127,12 +117,11 @@ public class JobCommandController {
     @PostMapping("/personal_registrations")
     public ResponseEntity<BaseResponse<JobCreateResponseDTO>> savePersonalRegistration(
             @AuthenticationPrincipal CustomOAuth2User user,
-            @Valid @RequestBody PersonalRequestDTO requestDTO,
-            HttpSession session
+            @Valid @RequestBody PersonalRequestDTO requestDTO
     ) {
         Long userId = user.getUserResponseDTO().getId();
 
-        JobCreateResponseDTO result = jobCommandService.savePersonalRegistration(userId, requestDTO, session);
+        JobCreateResponseDTO result = jobCommandService.savePersonalRegistration(userId, requestDTO);
         return ResponseEntity.ok(BaseResponse.onSuccess(result));
     }
 
