@@ -15,6 +15,9 @@ public interface JobCommandService {
     // 기본 일자리 정보 폼 저장 (드래프트 엔티티에 저장)
     JobDraftCreateResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO);
 
+    //일자리 초안이 있는지 확인하고 있다면 반환
+    JobDraftCreateResponseDTO existDraftCheck(Long userId);
+
     // 개인 등록 시 Personal 정보 저장 + Job 생성
     JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO, Long draftId);
 

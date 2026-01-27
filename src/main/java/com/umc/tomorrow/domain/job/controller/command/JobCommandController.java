@@ -13,6 +13,7 @@ import com.umc.tomorrow.domain.job.enums.RegistrantType;
 import com.umc.tomorrow.domain.job.service.command.JobCommandService;
 import com.umc.tomorrow.domain.job.service.query.JobQueryService;
 import com.umc.tomorrow.domain.member.repository.UserRepository;
+import com.umc.tomorrow.domain.searchAndFilter.dto.response.JobResponseDTO;
 import com.umc.tomorrow.global.common.base.BaseResponse;
 import com.umc.tomorrow.global.common.exception.RestApiException;
 import com.umc.tomorrow.global.common.exception.code.GlobalErrorStatus;
@@ -101,6 +102,21 @@ public class JobCommandController {
         JobDraftCreateResponseDTO result = jobCommandService.saveInitialJobStep(userId, requestDTO);
         return ResponseEntity.ok(BaseResponse.onSuccess(result));
     }
+
+
+    @Operation(summary = "일자리 초안 조회", description = "작성 중인 초안이 존재하는지 조회합니다.")
+    @PostMapping("/jobDraft/me")
+    public  ResponseEntity<BaseResponse<JobDraftCreateResponseDTO>> existDraftCheck(
+            @AuthenticationPrincipal CustomOAuth2User user
+    ){
+        Long userId = user.getUserResponseDTO().getId();
+
+        JobDraftCreateResponseDTO result = jobCommandService.existDraftCheck(userId);
+
+        return ResponseEntity.ok(BaseResponse.onSuccess(result));
+
+    }
+
 
 
 

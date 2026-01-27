@@ -84,6 +84,8 @@ public class JobDraft {
     @Enumerated(EnumType.STRING)
     private DraftStatus draftStatus = DraftStatus.DRAFT;
 
+    private boolean draftIsActive = false;
+
 
     public static JobDraft create(User user, JobRequestDTO dto, String jobAddress){
         JobDraft draft = new JobDraft();
@@ -105,10 +107,11 @@ public class JobDraft {
         draft.preferredQualifications = dto.getPreferredQualifications();
         draft.latitude = dto.getLatitude();
         draft.longitude = dto.getLongitude();
-        draft.location = dto.getLocation();
+        draft.location = jobAddress;
         draft.alwaysHiring = dto.getAlwaysHiring();
         draft.draftStatus = DraftStatus.DRAFT;
         draft.expiresAt = LocalDateTime.now().plusMinutes(30);
+        draft.draftIsActive = true;
         return draft;
     }
 

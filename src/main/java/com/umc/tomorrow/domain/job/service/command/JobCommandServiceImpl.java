@@ -11,6 +11,7 @@ import com.umc.tomorrow.domain.job.entity.BusinessVerification;
 import com.umc.tomorrow.domain.job.entity.Job;
 import com.umc.tomorrow.domain.job.entity.JobDraft;
 import com.umc.tomorrow.domain.job.entity.PersonalRegistration;
+import com.umc.tomorrow.domain.job.enums.DraftStatus;
 import com.umc.tomorrow.domain.job.enums.PostStatus;
 import com.umc.tomorrow.domain.job.enums.RegistrantType;
 import com.umc.tomorrow.domain.job.exception.code.JobErrorStatus;
@@ -26,6 +27,8 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -75,9 +78,7 @@ public class JobCommandServiceImpl implements JobCommandService {
         // 유저 존재 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-
-
-
+        
         // jobDraft 생성
         JobDraft savedDraft = jobDraftRepository.save(
                 JobDraft.create(user, requestDTO, jobAddress)
@@ -90,6 +91,31 @@ public class JobCommandServiceImpl implements JobCommandService {
                 .build();
 
     }
+
+
+
+    @Override
+    public JobDraftCreateResponseDTO existDraftCheck(Long userId) {
+
+        //존재하는 초안이 있는지 조회
+        Optional<JobDraft> draftOpt  = jobDraftRepository.findByUserIdAndDraftStatus(userId, DraftStatus.DRAFT);
+
+        //없다면 null반환
+        if (draftOpt.isEmpty()) {
+            return null;
+        }
+
+        //옵셔널에 담아놨기 때문에 꺼내서 써야함
+        JobDraft draft = draftOpt.get();
+
+
+        return JobDraftCreateResponseDTO.builder()
+                .id(draft.getId())
+                .draftStatus(draft.getDraftStatus())
+                .registrantType(draft.getRegistrantType())
+                .build();
+    }
+
 
 
 
