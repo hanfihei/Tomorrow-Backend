@@ -144,20 +144,20 @@ public class JobCommandController {
 
 
     /**
-     * 세션이 넘어온 경우 바로 일자리 등록, 아닐 경우 사업자 등록 페이지로 이동(POST)
+     * 사업자 인증이 되어 있지 않은 경우 사업자 등록 페이지로 이동(POST)
      * @param user 인증된 사용자
-     * @param session 세션 사용
+     * @param draftId 작성된 초안 id
      * @return 성공 응답
      */
-    @PostMapping("/business-verifications/register")
+    @PostMapping("{draftId}/business-verifications/register")
     @Operation(description = "세션과 유저 사업자 인증 여부에 따라 step 반환")
     public ResponseEntity<BaseResponse<JobStepResponseDTO>> checkBusinessAndJobStep(
             @AuthenticationPrincipal CustomOAuth2User user,
-            HttpSession session
+            @PathVariable Long draftId
     ) {
         Long userId = user.getUserResponseDTO().getId();
 
-        JobStepResponseDTO stepResponse = jobCommandService.determineJobStep(userId, session);
+        JobStepResponseDTO stepResponse = jobCommandService.determineJobStep(userId, draftId);
 
         return ResponseEntity.ok(BaseResponse.onSuccess(stepResponse));
     }

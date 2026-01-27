@@ -4,10 +4,7 @@ import com.umc.tomorrow.domain.job.dto.request.JobRequestDTO;
 import com.umc.tomorrow.domain.job.enums.*;
 import com.umc.tomorrow.domain.member.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -116,6 +113,11 @@ public class JobDraft {
     }
 
 
+    public void changeLocation(String jobAddress) {
+        this.location = jobAddress;
+    }
 
-
+    public void markCompleted() {
+        this.draftStatus = DraftStatus.COMPLETED;
+    }
 }

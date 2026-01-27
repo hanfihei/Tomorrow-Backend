@@ -22,10 +22,10 @@ public interface JobCommandService {
     JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO, Long draftId);
 
     // 사업자 등록이 이미 되어있는 경우 바로 Job 생성
-    JobCreateResponseDTO createJobWithExistingBusiness(Long userId, HttpSession session);
+    JobCreateResponseDTO createJobWithExistingBusiness(Long userId, Long draftId);
 
     // 사업자 등록이 안 되어 있는 경우 step 반환 (사업자 등록 페이지 이동)
-    JobStepResponseDTO determineJobStep(Long userId, HttpSession session);
+    JobStepResponseDTO determineJobStep(Long userId, Long draftId);
 
     // 사업자 등록
     void saveBusinessVerification(Long userId, BusinessRequestDTO requestDTO);

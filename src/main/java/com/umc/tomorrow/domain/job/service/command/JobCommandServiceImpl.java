@@ -78,7 +78,7 @@ public class JobCommandServiceImpl implements JobCommandService {
         // 유저 존재 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-        
+
         // jobDraft 생성
         JobDraft savedDraft = jobDraftRepository.save(
                 JobDraft.create(user, requestDTO, jobAddress)
@@ -204,6 +204,7 @@ public class JobCommandServiceImpl implements JobCommandService {
         job.setPersonalRegistration(personalRegistration);
 
         Job savedJob = jobRepository.save(job);
+        draft.markCompleted();
 
         return JobCreateResponseDTO.builder()
                 .jobId(savedJob.getId())
@@ -220,13 +221,13 @@ public class JobCommandServiceImpl implements JobCommandService {
 
     // 사업자 등록 여부 판단
     @Override
-    public JobStepResponseDTO determineJobStep(Long userId, HttpSession session) {
-        JobRequestDTO jobDTO = getJobFromSession(session);
+    public JobStepResponseDTO determineJobStep(Long userId, Long draftId) {
         User user = getUser(userId);
 
         if (user.getBusinessVerification() != null) {
             // 사업자 인증 있음 → 잡 등록
-            JobCreateResponseDTO jobResult = createJobWithExistingBusiness(userId, session);
+            JobCreateResponseDTO jobResult = createJobWithExistingBusiness(userId, draftId);
+
             return JobStepResponseDTO.builder()
                     .step("job_created")
                     .jobId(jobResult.getJobId())
@@ -243,29 +244,30 @@ public class JobCommandServiceImpl implements JobCommandService {
 
     // 기존 사업자 인증 있는 유저 잡 생성
     @Override
-    public JobCreateResponseDTO createJobWithExistingBusiness(Long userId, HttpSession session) {
+    public JobCreateResponseDTO createJobWithExistingBusiness(Long userId, Long draftId) {
+
         User user = getUser(userId);
+
+        JobDraft draft = jobDraftRepository.findById(draftId)
+                .orElseThrow(() -> new RestApiException(JobErrorStatus.JOBDRAFT_NOT_FOUND));
 
         if (user.getBusinessVerification() == null) {
             throw new RestApiException(GlobalErrorStatus._BAD_REQUEST);
         }
 
-        //job세션 정보가 넘어왔는지
-        JobRequestDTO jobDTO = getJobFromSession(session);
-
         // 등록자 유형 검증 (BUSINESS)
-        validateRegistrantType(jobDTO);
+        validateRegistrantType(draft);
 
         // 위도, 경도로 주소 저장
-        String jobAddress = kakaoMapService.getAddressFromCoord(jobDTO.getLatitude(), jobDTO.getLongitude());
-        jobDTO.setLocation(jobAddress);
+        String jobAddress = kakaoMapService.getAddressFromCoord(draft.getLatitude(), draft.getLongitude());
+        draft.changeLocation(jobAddress);
 
-        Job job = jobConverter.toJob(jobDTO).toBuilder()
-                .user(user)
-                .build();
+        Job job = Job.create(user, draft);
 
         Job savedJob = jobRepository.save(job);
-        session.removeAttribute(JOB_SESSION_KEY);
+
+        //드래프트의 상태를 작성 완료로 변경
+        draft.markCompleted();
 
         return JobCreateResponseDTO.builder()
                 .jobId(savedJob.getId())
@@ -289,8 +291,8 @@ public class JobCommandServiceImpl implements JobCommandService {
     }
 
     // 등록자 유형 검증
-    private void validateRegistrantType(JobRequestDTO jobDTO) {
-        if (jobDTO.getRegistrantType() != RegistrantType.BUSINESS) {
+    private void validateRegistrantType(JobDraft draft) {
+        if (draft.getRegistrantType() != RegistrantType.BUSINESS) {
             throw new RestApiException(JobErrorStatus.INVALID_REGISTRANT_TYPE);
         }
     }
