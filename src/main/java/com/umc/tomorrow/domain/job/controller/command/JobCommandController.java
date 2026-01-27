@@ -104,19 +104,23 @@ public class JobCommandController {
     }
 
 
-    @Operation(summary = "일자리 초안 조회", description = "작성 중인 초안이 존재하는지 조회합니다.")
-    @PostMapping("/jobDraft/me")
-    public  ResponseEntity<BaseResponse<JobDraftCreateResponseDTO>> existDraftCheck(
-            @AuthenticationPrincipal CustomOAuth2User user
-    ){
+    /**
+     * 작성 중인 일자리 초안 폐기(PATCH)
+     * @param user 인증된 사용자
+     * @param draftId 폐기할 초안 id
+     * @return 성공 응답
+     */
+    @PatchMapping("/jobDraft/{draftId}/discard")
+    public ResponseEntity<BaseResponse<Void>> discardDraft(
+            @AuthenticationPrincipal CustomOAuth2User user,
+            @PathVariable Long draftId
+    ) {
         Long userId = user.getUserResponseDTO().getId();
 
-        JobDraftCreateResponseDTO result = jobCommandService.existDraftCheck(userId);
+        jobCommandService.discardDraft(userId, draftId);
 
-        return ResponseEntity.ok(BaseResponse.onSuccess(result));
-
+        return ResponseEntity.ok(BaseResponse.onSuccess(null));
     }
-
 
 
 

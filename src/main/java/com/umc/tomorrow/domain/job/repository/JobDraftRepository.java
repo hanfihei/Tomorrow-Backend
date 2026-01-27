@@ -12,4 +12,5 @@ public interface JobDraftRepository extends JpaRepository<JobDraft, Long> {
     Optional<JobDraft> findByIdAndUser_Id(Long draftId, Long userId);
 
     Optional<JobDraft> findByUserIdAndDraftStatus(Long userId, DraftStatus draftStatus);
+
 }

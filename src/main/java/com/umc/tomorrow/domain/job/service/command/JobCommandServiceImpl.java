@@ -34,8 +34,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class JobCommandServiceImpl implements JobCommandService {
 
-    private static final String JOB_SESSION_KEY = "job_session";
-
     private final JobConverter jobConverter;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
@@ -72,6 +70,7 @@ public class JobCommandServiceImpl implements JobCommandService {
     @Transactional
     @Override
     public JobDraftCreateResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO) {
+
         // 위도/경도 → 주소 변환 후 DTO 세팅
         String jobAddress = kakaoMapService.getAddressFromCoord(requestDTO.getLatitude(), requestDTO.getLongitude());
 
@@ -93,9 +92,8 @@ public class JobCommandServiceImpl implements JobCommandService {
     }
 
 
-
     @Override
-    public JobDraftCreateResponseDTO existDraftCheck(Long userId) {
+    public JobDraftCreateResponseDTO getActiveDraft(Long userId) {
 
         //존재하는 초안이 있는지 조회
         Optional<JobDraft> draftOpt  = jobDraftRepository.findByUserIdAndDraftStatus(userId, DraftStatus.DRAFT);
@@ -108,14 +106,18 @@ public class JobCommandServiceImpl implements JobCommandService {
         //옵셔널에 담아놨기 때문에 꺼내서 써야함
         JobDraft draft = draftOpt.get();
 
+        return JobDraftCreateResponseDTO.from(draft);
 
-        return JobDraftCreateResponseDTO.builder()
-                .id(draft.getId())
-                .draftStatus(draft.getDraftStatus())
-                .registrantType(draft.getRegistrantType())
-                .build();
     }
 
+
+    @Transactional
+    public void discardDraft(Long userId, Long draftId) {
+        JobDraft draft = jobDraftRepository.findByIdAndUser_Id(draftId, userId)
+                .orElseThrow(() -> new RestApiException(JobErrorStatus.JOBDRAFT_NOT_FOUND));
+
+        draft.changeDiscardedStatus();
+    }
 
 
 
@@ -281,14 +283,14 @@ public class JobCommandServiceImpl implements JobCommandService {
                 .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
     }
 
-    // 세션에서 JobRequestDTO 조회
-    private JobRequestDTO getJobFromSession(HttpSession session) {
-        JobRequestDTO dto = (JobRequestDTO) session.getAttribute(JOB_SESSION_KEY);
-        if (dto == null) {
-            throw new RestApiException(JobErrorStatus.JOB_DATA_NOT_FOUND);
-        }
-        return dto;
-    }
+//    // 세션에서 JobRequestDTO 조회
+//    private JobRequestDTO getJobFromSession(HttpSession session) {
+//        JobRequestDTO dto = (JobRequestDTO) session.getAttribute(JOB_SESSION_KEY);
+//        if (dto == null) {
+//            throw new RestApiException(JobErrorStatus.JOB_DATA_NOT_FOUND);
+//        }
+//        return dto;
+//    }
 
     // 등록자 유형 검증
     private void validateRegistrantType(JobDraft draft) {

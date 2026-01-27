@@ -16,7 +16,10 @@ public interface JobCommandService {
     JobDraftCreateResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO);
 
     //일자리 초안이 있는지 확인하고 있다면 반환
-    JobDraftCreateResponseDTO existDraftCheck(Long userId);
+    JobDraftCreateResponseDTO getActiveDraft(Long userId);
+
+    //작성한 초안 폐기
+    void discardDraft(Long userId, Long draftId);
 
     // 개인 등록 시 Personal 정보 저장 + Job 생성
     JobCreateResponseDTO savePersonalRegistration(Long userId, PersonalRequestDTO requestDTO, Long draftId);

@@ -120,4 +120,8 @@ public class JobDraft {
     public void markCompleted() {
         this.draftStatus = DraftStatus.COMPLETED;
     }
+
+    public void changeDiscardedStatus() {
+        this.draftStatus = DraftStatus.DISCARDED;
+    }
 }
