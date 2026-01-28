@@ -93,8 +93,7 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Job> jobs = new ArrayList<>(); // 내가 등록한 일자리 목록
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private JobDraft jobDraft;
+
 
 
     // 사업자 등록 테이블과 1대1 연결

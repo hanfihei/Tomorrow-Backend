@@ -24,7 +24,8 @@ public enum JobErrorStatus implements BaseCodeInterface {
     INVALID_REGISTRANT_TYPE(HttpStatus.BAD_REQUEST, "JOB406", "등록 유형에 맞지 않는 접근 입니다."),
     BUSINESS_NOT_FOUND(HttpStatus.BAD_REQUEST, "JOB407", "저장된 사업자가 존재하지 않습니다."),
     JOBDRAFT_NOT_FOUND(HttpStatus.BAD_REQUEST, "JOB409", "저장된 초안 정보가 없습니다."),
-    JOB_DRAFT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "JOB410", "이미 저장된 초안이 있습니다.");
+    JOB_DRAFT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "JOB410", "이미 저장된 초안이 있습니다."),
+    JOB_ALREADY_CREATED(HttpStatus.BAD_REQUEST, "JOB411", "이미 job이 생성되었습니다.");
 
     private final HttpStatus httpStatus;
     private final boolean isSuccess = false;

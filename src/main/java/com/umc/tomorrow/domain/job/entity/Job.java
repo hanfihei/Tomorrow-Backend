@@ -106,6 +106,10 @@ public class Job extends BaseEntity {
     @Column(columnDefinition = "BOOLEAN DEFAULT false")
     private Boolean alwaysHiring = false;
 
+    //jobDraft와 연관관계는 맺지 않고 유니크 제약만 걸어줌
+    @Column(name = "draft_id", unique = true)
+    private Long draftId;
+
     //personalRegistration와 1:1관계
     @OneToOne(cascade = CascadeType.ALL, optional = true)
     @JoinColumn(name = "personal_registration_id", nullable = true,

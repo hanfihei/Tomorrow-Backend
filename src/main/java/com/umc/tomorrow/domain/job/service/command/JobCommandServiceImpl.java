@@ -25,6 +25,7 @@ import com.umc.tomorrow.global.common.exception.RestApiException;
 import com.umc.tomorrow.global.common.exception.code.GlobalErrorStatus;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,15 +66,10 @@ public class JobCommandServiceImpl implements JobCommandService {
 
 
 
-
     // 일자리 폼 드래프트 엔티티 저장
     @Transactional
     @Override
     public JobDraftCreateResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO) {
-
-        if(jobDraftRepository.existsByUserId(userId)) {
-             throw new RestApiException(JobErrorStatus.JOB_DRAFT_ALREADY_EXISTS);
-        }
 
         // 위도/경도 → 주소 변환 후 DTO 세팅
         String jobAddress = kakaoMapService.getAddressFromCoord(requestDTO.getLatitude(), requestDTO.getLongitude());
@@ -82,17 +78,37 @@ public class JobCommandServiceImpl implements JobCommandService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
-        
-        // jobDraft 생성
-        JobDraft savedDraft = jobDraftRepository.save(
-                JobDraft.create(user, requestDTO, jobAddress)
-        );
+        //실제 동시성을 막아주는 건 아님
+        if(jobDraftRepository.existsByUserId(userId)) {
+            throw new RestApiException(JobErrorStatus.JOB_DRAFT_ALREADY_EXISTS);
+        }
 
-        return JobDraftCreateResponseDTO.builder()
-                .id(savedDraft.getId())
-                .draftStatus(savedDraft.getDraftStatus())
-                .registrantType(savedDraft.getRegistrantType())
-                .build();
+        //동시성 이슈 처리
+        try {
+            JobDraft savedDraft = jobDraftRepository
+                    .save(JobDraft.create(user, requestDTO, jobAddress));
+
+            return JobDraftCreateResponseDTO.builder()
+                    .id(savedDraft.getId())
+                    .draftStatus(savedDraft.getDraftStatus())
+                    .registrantType(savedDraft.getRegistrantType())
+                    .build();
+
+        } catch (DataIntegrityViolationException e) {
+            throw new RestApiException(JobErrorStatus.JOB_DRAFT_ALREADY_EXISTS);
+        }
+
+
+//        // jobDraft 생성
+//        JobDraft savedDraft = jobDraftRepository.save(
+//                JobDraft.create(user, requestDTO, jobAddress)
+//        );
+
+//        return JobDraftCreateResponseDTO.builder()
+//                .id(savedDraft.getId())
+//                .draftStatus(savedDraft.getDraftStatus())
+//                .registrantType(savedDraft.getRegistrantType())
+//                .build();
 
     }
 
@@ -203,6 +219,11 @@ public class JobCommandServiceImpl implements JobCommandService {
 
         PersonalRegistration personalRegistration = jobConverter.toPersonal(requestDTO);
 
+        //동시성 방어
+        if (draft.getDraftStatus() == DraftStatus.COMPLETED) {
+            throw new RestApiException(JobErrorStatus.JOB_ALREADY_CREATED);
+        }
+
         //초안을 job에 저장
         Job job =  Job.create(user, draft);
 
@@ -269,16 +290,26 @@ public class JobCommandServiceImpl implements JobCommandService {
         String jobAddress = kakaoMapService.getAddressFromCoord(draft.getLatitude(), draft.getLongitude());
         draft.changeLocation(jobAddress);
 
-        Job job = Job.create(user, draft);
+        if(draft.getDraftStatus() == DraftStatus.COMPLETED) {
+            throw new RestApiException(JobErrorStatus.JOB_ALREADY_CREATED);
+        }
 
-        Job savedJob = jobRepository.save(job);
 
-        //드래프트의 상태를 작성 완료로 변경
-        draft.markCompleted();
+        //동시성 방어
+        try {
+            Job job = Job.create(user, draft);
+            Job savedJob = jobRepository.save(job);
 
-        return JobCreateResponseDTO.builder()
-                .jobId(savedJob.getId())
-                .build();
+            draft.markCompleted();
+
+            return JobCreateResponseDTO.builder()
+                    .jobId(savedJob.getId())
+                    .build();
+
+        } catch (DataIntegrityViolationException e) {
+            throw new RestApiException(JobErrorStatus.JOB_ALREADY_CREATED);
+        }
+
     }
 
     //헬퍼 메소드
