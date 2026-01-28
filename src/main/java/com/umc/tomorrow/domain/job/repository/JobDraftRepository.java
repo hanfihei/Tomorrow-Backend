@@ -9,8 +9,13 @@ import java.util.Optional;
 
 @Repository
 public interface JobDraftRepository extends JpaRepository<JobDraft, Long> {
+    boolean existsByUserId(Long userId);
+
     Optional<JobDraft> findByIdAndUser_Id(Long draftId, Long userId);
 
     Optional<JobDraft> findByUserIdAndDraftStatus(Long userId, DraftStatus draftStatus);
+
+    Optional<JobDraft> findByUserId(Long userId);
+
 
 }
