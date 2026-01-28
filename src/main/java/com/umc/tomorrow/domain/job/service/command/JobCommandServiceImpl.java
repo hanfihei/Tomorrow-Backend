@@ -71,12 +71,18 @@ public class JobCommandServiceImpl implements JobCommandService {
     @Override
     public JobDraftCreateResponseDTO saveInitialJobStep(Long userId, JobRequestDTO requestDTO) {
 
+//        if (draft.getDraftStatus() != DraftStatus.DRAFT) {
+//            throw new IllegalStateException("이미 처리된 초안");
+//        }
+//
         // 위도/경도 → 주소 변환 후 DTO 세팅
         String jobAddress = kakaoMapService.getAddressFromCoord(requestDTO.getLatitude(), requestDTO.getLongitude());
 
         // 유저 존재 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+
+
 
         // jobDraft 생성
         JobDraft savedDraft = jobDraftRepository.save(

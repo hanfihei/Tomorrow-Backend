@@ -3,6 +3,7 @@ package com.umc.tomorrow.domain.member.entity;
 import com.umc.tomorrow.domain.application.entity.Application;
 import com.umc.tomorrow.domain.job.entity.BusinessVerification;
 import com.umc.tomorrow.domain.job.entity.Job;
+import com.umc.tomorrow.domain.job.entity.JobDraft;
 import com.umc.tomorrow.domain.member.enums.Gender;
 import com.umc.tomorrow.domain.member.enums.Provider;
 import com.umc.tomorrow.domain.member.enums.UserStatus;
@@ -91,6 +92,9 @@ public class User {
     //연관관계
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Job> jobs = new ArrayList<>(); // 내가 등록한 일자리 목록
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private JobDraft jobDraft;
 
 
     // 사업자 등록 테이블과 1대1 연결
